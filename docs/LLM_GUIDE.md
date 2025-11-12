@@ -1,33 +1,35 @@
 # Automation Guide
 
-This repository is now tailored for iterative work by a large language model. Follow these rules every time you run an autonomous loop:
+Use this checklist every time you spin up an automation run. The repo is now a pure Zig ↔ JavaScriptCore bridge; anything that smells like the old Bun runtime is suspect.
 
-## Primary Goal
-Deliver a minimal Zig ↔ JavaScriptCore bridge. Do **not** reintroduce Bun subsystems (bundler, CLI, HTTP, package manager, Node polyfills, etc.).
+## Mission
+- Keep the public API limited to `bridge/src/{runtime,hostfn,api}.zig`.
+- Ensure JavaScriptCore is never executed on this machine – rely on the scaffolding under `src/bun.js/`.
+- Remove Bun-era subsystems instead of reanimating them (CLI, bundler, Node shims, HTTP stack, etc.).
 
-## Allowed Touchpoints
-- `bridge/src/` – modern bridge modules (runtime, hostfn, api, future helpers).
-- `bridge/tests/` – Zig test suites; add new files here as you implement scenarios.
-- `docs/` – design notes and task backlogs.
-- `src/bun.js/jsc.zig` + `src/bun.js/bindings/` – only when pruning or exposing necessary bindings. Avoid modifying other legacy files.
-- `build.zig` – simplify/replace with the lean bridge build.
+## Workspace Boundaries
+- ✅ `bridge/src/` – runtime modules, the new `bun` shim (`bridge/src/bun.zig`), and future helpers.
+- ✅ `bridge/tests/` – add/modify tests; keep them self-contained.
+- ✅ `docs/`, `BRIDGE_PLAN.md`, `bridge/TODO.md` – keep the plan/todo/bindings docs current.
+- ✅ `src/bun.js/jsc.zig` + `src/bun.js/bindings/` – only to prune exports or document the remaining bindings.
+- ✅ `build.zig` – maintain the lean build that links only the bridge library.
+- 🚫 Everything else in `src/` is legacy Bun runtime code. Do not edit it unless you are **deleting** it.
 
-## Commands To Run
-1. `zig fmt bridge/src/*.zig bridge/tests/*.zig` after code edits.
-2. `zig build test` (once the simplified root build exists). Until then run `cd bridge && zig build smoke`.
-3. `git status -sb` and include the output summary in your report.
+## Required Commands
+1. `zig fmt bridge/src/*.zig bridge/tests/*.zig` after code changes (report if `zig` is unavailable).
+2. `zig build test` from the repo root. This must stay green before submitting work.
+3. `git status -sb` – include the summarized output in your notes so reviewers see the exact diff scope.
 
-> **Important:** Do **not** attempt to compile or execute the real JavaScriptCore runtime in this environment; the libraries are not available. Use the existing Zig scaffolding to ensure APIs compile and tests pass up to the point where JSC would be invoked. Focus on removing legacy Bun dependencies and tightening the bridge interfaces.
+## Implementation Notes
+- The bridge imports a minimal shim at `bridge/src/bun.zig`. Never point the build at `src/bun.zig` again; that would resurrect the entire Bun runtime.
+- When touching bindings, update **both** `src/bun.js/jsc.zig` and `docs/bindings-map.md` in the same change so the surface stays auditable.
+- Prefer targeted modules over monoliths; add short comments only when behavior is non-obvious.
+- Tests should fail loudly instead of using placeholders (no `error.SkipZigTest` once a feature is implemented).
+- Every task that lands must flip the relevant checkbox in `BRIDGE_PLAN.md` and/or `bridge/TODO.md` with a short parenthetical note (file + date).
 
-## Style / Structure
-- Prefer small modules over monolithic files.
-- Keep placeholders explicit: use `return error.SkipZigTest;` in tests and `@compileError`/`Error.NotImplemented` in code.
-- Update `BRIDGE_PLAN.md` checkboxes whenever you finish a task. Mention the exact files touched.
-- Document non-obvious behavior in `docs/` or inline comments (short and targeted).
+## Prohibited Actions
+- No new external dependencies, npm projects, or TypeScript toolchains.
+- No attempts to execute real JavaScriptCore binaries here.
+- No git history rewrites or `git reset --hard`.
 
-## Forbidden Actions
-- Do not restore deleted directories (`src/bundler`, `src/install`, etc.).
-- Do not add npm/Node dependencies or TypeScript tooling.
-- Avoid editing Git history or touching `.git` metadata.
-
-Stick to these guidelines and each nightly run will make deterministic progress that is easy to review.
+Following these guardrails keeps each automation iteration predictable and reviewable while we wait for an actual JSC build.
