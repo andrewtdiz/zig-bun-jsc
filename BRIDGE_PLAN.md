@@ -1,12 +1,14 @@
 # Minimal Zig ↔ JSC Bridge: Scope & Verification Strategy
 
 ## 1. Objective
-Build a stripped-down subset of the Bun repository that contains only the infrastructure required for a bidirectional bridge between Zig and JavaScriptCore (JSC). All higher-level runtime features (Node shim, HTTP/Web APIs, bundler, package manager, CLI, etc.) are intentionally deleted. The resulting artifact should:
+Build a stripped-down subset of the former Bun runtime that contains only the infrastructure required for a bidirectional bridge between Zig and JavaScriptCore (JSC). All higher-level runtime features (Node shim, HTTP/Web APIs, bundler, package manager, CLI, etc.) are intentionally deleted. The resulting artifact should:
 
 - Initialize and own a JSC VM across macOS, Linux, and Windows.
 - Expose host functions written in Zig to the JS world.
 - Allow Zig to evaluate JS, get/set object properties, and marshal primitive + structured data in both directions.
 - Support basic lifecycle hooks (GC integration, VM teardown, microtask flushing) needed for an embedded game-engine use case.
+
+> **Practical constraint:** We do **not** have a Linux build of JavaScriptCore in this environment. Until that changes, the bridge work must rely on the existing Bun scaffolding (`src/bun.js/jsc.zig` and related bindings) without actually linking or executing JSC. Focus on cleaning Bun dependencies, tightening the API surface, and ensuring the Zig runtime modules behave deterministically under tests that stop short of invoking real JSC entry points.
 
 ## 2. Minimal Layers to Keep/Refactor
 1. **C++ binding surface (`src/bun.js/bindings/bindings.cpp`, `headers.h`)**  
@@ -24,14 +26,33 @@ Build a stripped-down subset of the Bun repository that contains only the infras
 4. **Build system artifacts (`build.zig`, `CMakeLists.txt`, `scripts/build-jsc.ts`)**  
    - Update to compile only the retained sources and link against upstream JSC/WTF/libicu dependencies.
 
-## 3. High-Level Task Breakdown
-| Phase | Goals |
-| --- | --- |
-| **Inventory & Prune** | (Completed) Remove directories unrelated to Zig↔JSC bridging; confirm no surviving build references to deleted code. |
-| **Surface Audit** | Trace every Zig file that imports `src/bun.js/jsc.zig`. Delete or simplify call sites that assume Bun APIs (e.g., HTTP, bundler). |
-| **Bridge Isolation** | Refactor surviving modules into an explicit `bridge/` namespace to clarify ownership and ease future packaging. |
-| **Host API Definition** | Decide the minimal host-facing API (`bridge.init()`, `bridge.eval(string) -> JSValue`, `bridge.call(fn, args)`, `bridge.expose(name, ZigFn)`, etc.) and document it for the game-engine team. |
-| **Testing Harness** | Stand up a verifiable test suite (see below) that exercises the reduced functionality in CI. |
+## 3. Incremental Task Board
+> Use these checklists to drive automation/LLM loops. Each item references the primary file(s) to touch and the validation command to run.
+
+### Phase A · Architecture Skeleton
+- [ ] `build.zig`: replace the legacy Bun build with a ~100 line script that (1) builds `bridge` as a static library and (2) runs the bridge tests via `zig build test`.
+- [ ] `bridge/src/lib.zig`: split into modules (`runtime.zig`, `hostfn.zig`, `api.zig`) and re-export them from `lib.zig`.
+- [ ] `bridge/src/runtime.zig`: scaffold functions `init(config)`, `shutdown()`, `globalObject()`, each `@compileError("TODO")` until implemented.
+- [ ] `bridge/src/hostfn.zig`: provide helpers (`register`, `callFromJS`) with TODO bodies plus doc comments describing expected behavior.
+- [ ] `bridge/tests/vm_lifecycle.zig`: add placeholder tests calling `runtime.init` / `shutdown`; mark with `std.testing.expect(false)` until implemented.
+
+### Phase B · Binding Cleanup
+- [ ] `docs/bindings-map.md` (new): list every Zig file under `src/bun.js/bindings/` that is still imported; explicitly mark candidates for deletion.
+- [ ] For each unused binding file, delete the Zig + C++ pair and remove the re-export from `src/bun.js/jsc.zig`.
+- [ ] `src/bun.js/jsc.zig`: ensure only the types we actively re-export remain, with comments referencing the new modules in `bridge/src/`.
+
+### Phase C · Host API Definition
+- [ ] `bridge/src/api.zig`: define the public surface (`pub fn evalUtf8`, `pub fn exposeHostFn`, `pub fn callFunction`) with structured error types.
+- [ ] `bridge/README.md`: document the API (parameters, threading expectations, error values) and link to example usage.
+- [ ] `docs/LLM_GUIDE.md`: add explicit instructions for future automation runs (allowed directories, required commands, style rules).
+
+### Phase D · Testing
+- [ ] `bridge/tests/hostfn_roundtrip.zig`: JS→Zig→JS round-trip once runtime helpers exist.
+- [ ] `bridge/tests/gc_weakrefs.zig`: skeleton verifying weak refs/GC once the runtime hook lands.
+- [ ] `bridge/tests/embed_loop.zig`: simulate a game-engine tick function calling into the bridge.
+- [ ] `README.md`: add “Test Matrix” section mapping each test file to the scenario it covers.
+
+Track progress by editing this section directly—automation runs can simply check off the boxes they complete.
 
 ## 4. Verifiable Testing Suite
 Design tests that can run without the removed Bun subsystems but still prove the bridge works cross-platform and under stress.
@@ -52,7 +73,7 @@ Design tests that can run without the removed Bun subsystems but still prove the
 
 3. **JavaScript-Level Contract Tests**
    - Bundle a handful of `.js` fixtures executed via `bridge.eval`.
-   - Assertions performed on the Zig side to avoid reintroducing Bun’s test runner. Example: JS calls `globalThis.__zigCallback(JSON.stringify({ foo: 1 }))`, Zig parses the payload and checks invariants.
+   - Assertions performed on the Zig side to avoid reintroducing the old Bun test runner. Example: JS calls `globalThis.__zigCallback(JSON.stringify({ foo: 1 }))`, Zig parses the payload and checks invariants.
 
 4. **Conformance + Stress**
    - Micro-bench tasks to ensure the bridge can handle:
@@ -66,10 +87,10 @@ Design tests that can run without the removed Bun subsystems but still prove the
    - Simulate the engine loop in a Zig test; ensure re-entrancy and teardown behave.
 
 ### 4.2 Tooling & Automation
-- **Custom Test Driver**: Add `bun bd bridge:test` (or a plain `zig build bridge-test`) that compiles the bridge plus tests without relying on removed infrastructure.
+- **Root Build Target**: `zig build test` (from repo root) must compile the bridge static lib and run every file under `bridge/tests/`. No other tooling required.
 - **Snapshot-free Assertions**: Prefer direct equality checks and structured logging so CI logs stay readable.
-- **GC/Memory Hooks**: Enable `BUN_DEBUG` scopes or similar compile-time flags so tests can enforce “no leaked handles” after each run.
-- **Cross-Platform Matrix**: Keep the Buildkite (or GitHub Actions) jobs minimal—just build + run the bridge tests on macOS, Linux, Windows. Fail on any ABI drift.
+- **GC/Memory Hooks**: Enable a `BRIDGE_DEBUG_*` scope (or similar compile-time flag) so tests can enforce “no leaked handles” after each run.
+- **Cross-Platform Matrix**: Keep CI minimal—just build + run the bridge tests on macOS, Linux, Windows. Fail on any ABI drift.
 
 ### 4.3 Pass/Fail Criteria
 - VM initializes and shuts down without leaks (track via `wtf::RefCounted` stats or Zig allocators).
@@ -78,11 +99,19 @@ Design tests that can run without the removed Bun subsystems but still prove the
 - Deterministic microtask execution order (tests attach hooks to verify `Promise` resolutions run before the next tick).
 - Stress set passes under configurable iteration counts; failures dump diagnostic info (heap size, pending jobs).
 
-## 5. Deliverables Checklist
+## 5. Machine Checklist
+This section spells out the commands an automated run should execute after each change:
+
+1. `zig fmt bridge/src/*.zig bridge/tests/*.zig` — keep scaffolding tidy.
+2. `zig build test` — run the top-level build once the simplified script lands. Until then, run `cd bridge && zig build smoke`.
+3. `git status -sb` — verify only the intended files changed; automation should include this in its log.
+4. Update the checkboxes above to reflect progress and add short notes (e.g., “implemented evalUtf8 in bridge/src/api.zig”).
+
+## 6. Deliverables Checklist
 - [ ] Updated build scripts producing a single bridge library/binary.
 - [ ] Documentation for the host API and embedding steps.
 - [ ] Automated bridge test target wired into CI.
 - [ ] Reference harness demonstrating integration (e.g., mock game-loop executable).
 - [ ] Monitoring of binary size + dependency list to ensure we stay within embedded constraints.
 
-By codifying the minimal layers and standing up this verification suite, we get repeatable proof that the Zig↔JSC bridge works independently from the rest of Bun and is safe to embed in the target game engine. Once stable, we can consider packaging it as a reusable SDK or git submodule for downstream teams.
+By codifying the minimal layers and standing up this verification suite, we get repeatable proof that the Zig↔JSC bridge works independently from the rest of the Bun-era code and is safe to embed in the target game engine. Once stable, we can consider packaging it as a reusable SDK or git submodule for downstream teams.

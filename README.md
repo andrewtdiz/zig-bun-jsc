@@ -1,60 +1,65 @@
 
-Bun is an all-in-one toolkit for JavaScript and TypeScript apps. It ships as a single executable called `bun`.
+# Zig ↔ JavaScriptCore Bridge
 
-At its core is the _Bun runtime_, a fast JavaScript runtime designed as **a drop-in replacement for Node.js**. It's written in Zig and powered by JavaScriptCore under the hood, dramatically reducing startup times and memory usage.
+This repository now focuses on a single goal: provide a compact, auditable layer that connects Zig code to WebKit’s JavaScriptCore (JSC). The code base started life as Bun, but the runtime, CLI, package manager, bundler, Node compatibility layer, and web APIs have been removed so we can ship a lightweight embedding surface that fits inside other applications (such as a game engine).
+
+## What’s Here
+
+| Path | Purpose |
+| ---- | ------- |
+| `src/bun.js/jsc.zig` | The trimmed Zig bindings that wrap JSC types (JSValue, JSObject, JSGlobalObject, VM, etc.). |
+| `src/bun.js/bindings/` | The matching C++/Zig glue that bridges to the JavaScriptCore headers. This directory is still large because it houses the low-level ABI surface. |
+| `bridge/` | A self-contained Zig test harness for iterating on the bridge without any of the old Bun tooling. |
+
+Anything unrelated to Zig↔JSC data flow (bundler, install tools, HTTP, CSS, Node polyfills, etc.) has been deleted. When you see references to “legacy Bun” in comments they exist only for historical context.
+
+## Getting Started
+
+Requirements:
+
+- Zig `0.16.0-dev.732` (or newer)
+- A C/C++ toolchain capable of building JavaScriptCore (Clang/LLVM on macOS + Linux, MSVC on Windows)
+
+> **Note:** The Linux automation environment that drives this repo does **not** have JavaScriptCore compiled. Until we publish prebuilt artifacts, all work happens against the stubbed interfaces already present in `src/bun.js/`. Treat them as scaffolding: build APIs, clean dependencies, and verify Zig-only behavior, but don’t attempt to run/link the real JSC binary yet.
+
+Smoke test the Zig-only scaffolding:
 
 ```bash
-bun run index.tsx             # TS and JSX supported out-of-the-box
+cd bridge
+zig build smoke
 ```
 
-The `bun` command-line tool also implements a test runner, script runner, and Node.js-compatible package manager. Instead of 1,000 node_modules for development, you only need `bun`. Bun's built-in tools are significantly faster than existing options and usable in existing Node.js projects with little to no changes.
+The `bridge` build script wires `bridge/tests/*.zig` against `bridge/src/lib.zig`, which re-exports the slimmed `src/bun.js/jsc.zig`. These tests currently stop before touching real JavaScriptCore symbols so you can iterate on the Zig surface without dealing with the native library yet.
 
-```bash
-bun test                      # run tests
-bun run start                 # run the `start` script in `package.json`
-bun install <pkg>             # install a package
-bunx cowsay 'Hello, world!'   # execute a package
-```
+Next steps (see `BRIDGE_PLAN.md` for the detailed roadmap):
 
-## Install
+1. Flesh out `bridge/src/lib.zig` so it can create/destroy a VM, install host functions, and evaluate scripts.
+2. Move cross-platform initialization into a new module (e.g. `src/bridge/runtime.zig`) that links to the C++ bindings.
+3. Add incremental tests under `bridge/tests/` to cover VM lifecycle, host→JS calls, JS→host callbacks, GC + weak refs, and data marshaling.
 
-Bun supports Linux (x64 & arm64), macOS (x64 & Apple Silicon) and Windows (x64).
+## Test Matrix
 
-> **Linux users** — Kernel version 5.6 or higher is strongly recommended, but the minimum is 5.1.
+| File | Scenario | Status |
+| ---- | -------- | ------ |
+| `bridge/tests/smoke.zig` | Basic initialization helper + imports the rest of the suite | PASS |
+| `bridge/tests/vm_lifecycle.zig` | Init/shutdown/global-object checks | `SkipZigTest` placeholder |
+| `bridge/tests/hostfn_roundtrip.zig` | Expose a Zig host fn and call it from JS | `SkipZigTest` placeholder |
+| `bridge/tests/gc_weakrefs.zig` | Ensure weak references survive GC | `SkipZigTest` placeholder |
+| `bridge/tests/embed_loop.zig` | Simulate a game-engine tick invoking the bridge | `SkipZigTest` placeholder |
 
-> **x64 users** — if you see "illegal instruction" or similar errors, check our [CPU requirements](https://bun.com/docs/installation#cpu-requirements-and-baseline-builds)
+Update this table as soon as each placeholder becomes real coverage.
 
-```sh
-# with install script (recommended)
-curl -fsSL https://bun.com/install | bash
+## Relationship to Bun
 
-# on windows
-powershell -c "irm bun.com/install.ps1 | iex"
+- `_Everything_` under `src/` that still references `bun.*` is historical scaffolding we are paring back to the bare essentials. Treat those symbols as implementation details, not product features.
+- The repository intentionally keeps `src/bun.js/` paths because many of the C++ bindings expect those include locations. We will collapse the directories once the new bridge API is stable.
+- When you need a reference implementation for how to call a JSC API, search the Git history rather than pulling large Bun subsystems back in.
 
-# with npm
-npm install -g bun
+## Support & Contact
 
-# with Homebrew
-brew tap oven-sh/bun
-brew install bun
+- **Security reports:** see `SECURITY.md`.
+- **Contributing:** `CONTRIBUTING.md` covers how to propose changes and run the bridge harness.
+- **Project discussion:** use `DISCUSSION.md` for design notes, outstanding questions, and test plans tied to the new bridge.
+- **Automation guidance:** `docs/LLM_GUIDE.md` documents the expectations for overnight/LLM runs.
 
-# with Docker
-docker pull oven/bun
-docker run --rm --init --ulimit memlock=-1:-1 oven/bun
-```
-
-### Upgrade
-
-To upgrade to the latest version of Bun, run:
-
-```sh
-bun upgrade
-```
-
-Bun automatically releases a canary build on every commit to `main`. To upgrade to the latest canary build, run:
-
-```sh
-bun upgrade --canary
-```
-
-[View canary build](https://github.com/oven-sh/bun/releases/tag/canary)
+If you are looking for the full Bun runtime, CLI, or package manager, use [`oven-sh/bun`](https://github.com/oven-sh/bun). This repository is intentionally minimal and is not a drop-in replacement for Bun itself.
