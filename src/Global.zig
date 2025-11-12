@@ -104,10 +104,6 @@ pub fn isExiting() bool {
 /// Flushes stdout and stderr (in exit/quick_exit callback) and exits with the given code.
 pub fn exit(code: u32) noreturn {
     is_exiting.store(true, .monotonic);
-    _ = @atomicRmw(usize, &bun.analytics.Features.exited, .Add, 1, .monotonic);
-
-    // If we are crashing, allow the crash handler to finish it's work.
-    bun.crash_handler.sleepForeverIfAnotherThreadIsCrashing();
 
     if (Environment.isDebug) {
         bun.assert(bun.debug_allocator_data.backing.?.deinit() == .ok);
@@ -132,28 +128,6 @@ pub fn exit(code: u32) noreturn {
             std.c.abort(); // quick_exit should be noreturn
         },
     }
-}
-
-pub fn raiseIgnoringPanicHandler(sig: bun.SignalCode) noreturn {
-    Output.flush();
-    Output.Source.Stdio.restore();
-
-    // clear segfault handler
-    bun.crash_handler.resetSegfaultHandler();
-
-    // clear signal handler
-    if (bun.Environment.os != .windows) {
-        var sa: std.c.Sigaction = .{
-            .handler = .{ .handler = std.posix.SIG.DFL },
-            .mask = std.posix.sigemptyset(),
-            .flags = std.posix.SA.RESETHAND,
-        };
-        _ = std.c.sigaction(@intFromEnum(sig), &sa, null);
-    }
-
-    // kill self
-    _ = std.c.raise(@intFromEnum(sig));
-    std.c.abort();
 }
 
 pub const AllocatorConfiguration = struct {
@@ -184,23 +158,6 @@ pub fn crash() noreturn {
     @branchHint(.cold);
     Global.exit(1);
 }
-
-pub const BunInfo = struct {
-    bun_version: string,
-    platform: analytics.GenerateHeader.GeneratePlatform.Platform,
-
-    const analytics = bun.analytics;
-    const JSON = bun.json;
-    const JSAst = bun.ast;
-    pub fn generate(comptime Bundler: type, _: Bundler, allocator: std.mem.Allocator) !JSAst.Expr {
-        const info = BunInfo{
-            .bun_version = Global.package_json_version,
-            .platform = analytics.GenerateHeader.GeneratePlatform.forOS(),
-        };
-
-        return try JSON.toAST(allocator, BunInfo, info);
-    }
-};
 
 pub const user_agent = "Bun/" ++ Global.package_json_version;
 pub export const Bun__userAgent: [*:0]const u8 = Global.user_agent;

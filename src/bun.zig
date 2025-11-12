@@ -174,7 +174,6 @@ pub const JSTerminated = error{
 
 pub const JSOOM = OOM || JSError;
 
-pub const ci = @import("./ci_info.zig");
 
 /// Cross-platform system APIs
 pub const sys = @import("./sys.zig");
@@ -192,20 +191,13 @@ pub const linux = @import("./linux.zig");
 /// Translated from `c-headers-for-zig.h` for the current platform.
 pub const c = @import("translated-c-headers");
 
-pub const sha = @import("./sha.zig");
 pub const FeatureFlags = @import("./feature_flags.zig");
 pub const meta = @import("./meta.zig");
-pub const base64 = @import("./base64/base64.zig");
 pub const path = @import("./resolver/resolve_path.zig");
-pub const resolver = @import("./resolver/resolver.zig");
-pub const DirIterator = @import("./bun.js/node/dir_iterator.zig");
-pub const PackageJSON = @import("./resolver/package_json.zig").PackageJSON;
 pub const fmt = @import("./fmt.zig");
 
 // This file is gennerated, but cant be placed in the build/debug/codegen
 // folder because zig will complain about outside-of-module stuff
-/// All functions and interfaces provided from Bun's `bindgen` utility.
-pub const gen = @import("./bun.js/bindings/GeneratedBindings.zig");
 
 comptime {
     // This file is gennerated, but cant be placed in the build/debug/codegen
@@ -216,30 +208,19 @@ comptime {
 
 /// Copied from Zig std.trait
 pub const trait = @import("./trait.zig");
-/// Copied from Zig std.Progress before 0.13 rewrite
-pub const Progress = @import("./Progress.zig");
 /// Modified version of Zig's ComptimeStringMap
 pub const comptime_string_map = @import("./comptime_string_map.zig");
 pub const ComptimeStringMap = comptime_string_map.ComptimeStringMap;
 pub const ComptimeStringMap16 = comptime_string_map.ComptimeStringMap16;
 pub const ComptimeStringMapWithKeyType = comptime_string_map.ComptimeStringMapWithKeyType;
 
-pub const glob = @import("./glob.zig");
-pub const patch = @import("./patch.zig");
-pub const ini = @import("./ini.zig");
-pub const bits = @import("./bits.zig");
-pub const css = @import("./css/css_parser.zig");
 pub const SmallList = css.SmallList;
-pub const csrf = @import("./csrf.zig");
-pub const validators = @import("./bun.js/node/util/validators.zig");
 
-pub const shell = @import("./shell/shell.zig");
 
 pub const Output = @import("./output.zig");
 pub const Global = @import("./Global.zig");
 
 pub const FD = @import("./fd.zig").FD;
-pub const MovableIfWindowsFd = @import("./fd.zig").MovableIfWindowsFd;
 
 /// Deprecated: Use `FD` instead.
 pub const FileDescriptor = FD;
@@ -277,9 +258,7 @@ pub fn platformIOVecToSlice(iovec: PlatformIOVec) []u8 {
     return iovec.base[0..iovec.len];
 }
 
-pub const libarchive = @import("./libarchive/libarchive.zig");
 
-pub const paths = @import("./paths.zig");
 pub const MAX_PATH_BYTES = paths.MAX_PATH_BYTES;
 pub const PathBuffer = paths.PathBuffer;
 pub const PATH_MAX_WIDE = paths.PATH_MAX_WIDE;
@@ -389,7 +368,6 @@ pub fn span(pointer: anytype) Span(@TypeOf(pointer)) {
 }
 
 pub const IdentityContext = @import("./identity_context.zig").IdentityContext;
-pub const ArrayIdentityContext = @import("./identity_context.zig").ArrayIdentityContext;
 pub const StringHashMapUnowned = struct {
     pub const Key = struct {
         hash: u64,
@@ -479,8 +457,6 @@ pub fn clone(item: anytype, allocator: std.mem.Allocator) !@TypeOf(item) {
     return try allocator.dupe(Child, item);
 }
 
-pub const LinearFifo = @import("./linear_fifo.zig").LinearFifo;
-pub const LinearFifoBufferType = @import("./linear_fifo.zig").LinearFifoBufferType;
 
 /// hash a string
 pub fn hash(content: []const u8) u64 {
@@ -538,7 +514,6 @@ pub fn csprng(bytes: []u8) void {
     _ = BoringSSL.c.RAND_bytes(bytes.ptr, bytes.len);
 }
 
-pub const ObjectPool = @import("./pool.zig").ObjectPool;
 
 pub fn assertNonBlocking(fd: anytype) void {
     assert((std.posix.fcntl(fd, std.posix.F.GETFL, 0) catch unreachable) & O.NONBLOCK != 0);
@@ -641,10 +616,7 @@ pub fn StringEnum(comptime Type: type, comptime Map: anytype, value: []const u8)
     return ComptimeStringMap(Type, Map).get(value);
 }
 
-pub const Bunfig = @import("./bunfig.zig").Bunfig;
 
-pub const HTTPThread = @import("./http.zig").HTTPThread;
-pub const http = @import("./http.zig");
 
 pub const ptr = @import("./ptr.zig");
 pub const TaggedPointer = ptr.TaggedPointer;
@@ -713,7 +685,6 @@ pub fn rangeOfSliceInBuffer(slice: []const u8, buffer: []const u8) ?[2]u32 {
 // Please prefer `bun.FD.Optional.none` over this
 pub const invalid_fd: FileDescriptor = .invalid;
 
-pub const bun_js = @import("./bun.js.zig");
 /// Bindings to JavaScriptCore and other JavaScript primatives.
 /// Web and runtime-specific APIs should go in `webcore` and `api`.
 /// Legacy callers still reach `bun.jsc.wtf`, so expose that helper here
@@ -721,7 +692,6 @@ pub const bun_js = @import("./bun.js.zig");
 /// by the bridge modules.
 pub const jsc = struct {
     pub usingnamespace bun_js.jsc;
-    pub const wtf = @import("./bun.js/bindings/WTF.zig").WTF;
 };
 /// JavaScript Web APIs
 pub const webcore = bun_js.webcore;
@@ -730,13 +700,6 @@ pub const api = bun_js.api;
 
 pub const logger = @import("./logger.zig");
 pub const default_thread_stack_size = ThreadPool.default_thread_stack_size;
-pub const picohttp = @import("./deps/picohttp.zig");
-pub const uws = @import("./deps/uws.zig");
-pub const BoringSSL = @import("./boringssl.zig");
-pub const LOLHTML = @import("./deps/lol-html.zig");
-pub const clap = @import("./deps/zig-clap/clap.zig");
-pub const analytics = @import("./analytics.zig");
-pub const zlib = @import("./zlib.zig");
 pub const simdutf = @import("./bun.js/bindings/bun-simdutf.zig");
 
 pub var start_time: i128 = 0;
@@ -1076,7 +1039,6 @@ pub fn parseDouble(input: []const u8) !f64 {
     return jsc.wtf.parseDouble(input);
 }
 
-pub const SignalCode = @import("./SignalCode.zig").SignalCode;
 
 pub fn isMissingIOUring() bool {
     if (comptime !Environment.isLinux)
@@ -1098,14 +1060,10 @@ pub fn isMissingIOUring() bool {
     };
 }
 
-pub const cli = @import("./cli.zig");
 
-pub const install = @import("./install/install.zig");
 pub const PackageManager = install.PackageManager;
-pub const RunCommand = @import("./cli/run_command.zig").RunCommand;
 
 pub const fs = @import("./fs.zig");
-pub const transpiler = @import("./transpiler.zig");
 pub const Transpiler = transpiler.Transpiler;
 pub const which = @import("./which.zig").which;
 pub const js_parser = @import("./js_parser.zig");
@@ -1113,7 +1071,6 @@ pub const js_printer = @import("./js_printer.zig");
 pub const js_lexer = @import("./js_lexer.zig");
 pub const ast = @import("./ast.zig");
 
-pub const interchange = @import("./interchange.zig");
 pub const json = interchange.json;
 
 pub fn enumMap(comptime T: type, comptime args: anytype) (fn (T) [:0]const u8) {
@@ -1152,8 +1109,6 @@ pub fn zero(comptime Type: type) Type {
     return @as(Type, @bitCast(out));
 }
 pub const c_ares = @import("./deps/c_ares.zig");
-pub const URL = @import("./url.zig").URL;
-pub const FormData = @import("./url.zig").FormData;
 
 var needs_proc_self_workaround: bool = false;
 
@@ -1357,11 +1312,7 @@ pub fn sliceTo(pointer: anytype, comptime end: std.meta.Elem(@TypeOf(pointer))) 
     }
 }
 
-pub const Semver = @import("./semver.zig");
-pub const ImportRecord = @import("./import_record.zig").ImportRecord;
-pub const ImportKind = @import("./import_record.zig").ImportKind;
 
-pub const Watcher = @import("./Watcher.zig");
 
 pub fn concat(comptime T: type, dest: []T, src: []const []const T) void {
     var remain = dest;
@@ -1371,9 +1322,7 @@ pub fn concat(comptime T: type, dest: []T, src: []const []const T) void {
     }
 }
 
-pub const renamer = @import("./renamer.zig");
 
-pub const SourceMap = @import("./sourcemap/sourcemap.zig");
 
 /// Attempt to coerce some value into a byte slice.
 pub fn asByteSlice(buffer: anytype) []const u8 {
@@ -1605,7 +1554,6 @@ pub fn reloadProcess(
 
 pub var auto_reload_on_crash = false;
 
-pub const options = @import("./options.zig");
 pub const StringSet = struct {
     map: Map,
 
@@ -1748,8 +1696,6 @@ pub const StringMap = struct {
     }
 };
 
-pub const DotEnv = @import("./env_loader.zig");
-pub const bundle_v2 = @import("./bundler/bundle_v2.zig");
 pub const Loader = bundle_v2.Loader;
 pub const BundleV2 = bundle_v2.BundleV2;
 pub const ParseTask = bundle_v2.ParseTask;
@@ -1805,7 +1751,6 @@ pub fn HiveRef(comptime T: type, comptime capacity: u16) type {
     };
 }
 
-pub const tracy = @import("./tracy.zig");
 pub const trace = tracy.trace;
 
 pub fn openFileForPath(file_path: [:0]const u8) !std.fs.File {
@@ -1836,9 +1781,7 @@ pub fn openDirForPath(file_path: [:0]const u8) !std.fs.Dir {
 
 pub const Generation = u16;
 
-pub const zstd = @import("./deps/zstd.zig");
 pub const StringPointer = schema.api.StringPointer;
-pub const StandaloneModuleGraph = @import("./StandaloneModuleGraph.zig").StandaloneModuleGraph;
 
 pub const string = @import("./string.zig");
 pub const String = string.String;
@@ -1860,7 +1803,6 @@ pub const WTF = struct {
     pub const _StringImplStruct = string.WTFStringImplStruct;
 };
 
-pub const Wyhash11 = @import("./wyhash.zig").Wyhash11;
 
 const TODO_LOG = Output.scoped(.TODO, .visible);
 pub inline fn todo(src: std.builtin.SourceLocation, value: anytype) @TypeOf(value) {
@@ -2099,7 +2041,6 @@ pub fn initArgv(allocator: std.mem.Allocator) !void {
     }
 }
 
-pub const spawn = @import("./bun.js/api/bun/spawn.zig").PosixSpawn;
 
 pub fn isRegularFile(mode: anytype) bool {
     return S.ISREG(@intCast(mode));
@@ -2206,7 +2147,6 @@ pub fn makePathW(dir: std.fs.Dir, sub_path: []const u16) !void {
     return makePath(dir, buf[0..buf_len]);
 }
 
-pub const Async = @import("async");
 
 /// This is a helper for writing path string literals that are compatible with Windows.
 /// Returns the string as-is on linux, on windows replace `/` with `\`
@@ -2536,7 +2476,6 @@ pub fn create(allocator: std.mem.Allocator, comptime T: type, t: T) *T {
     return pointer;
 }
 
-pub const heap_breakdown = @import("./heap_breakdown.zig");
 
 /// Globally-allocate a value on the heap. Must free with `bun.destroy`.
 /// Prefer this over `default_allocator.create`
@@ -2657,9 +2596,7 @@ pub fn deleteAllPoolsForThreadExit() void {
     }
 }
 
-pub const Tmpfile = @import("./tmp.zig").Tmpfile;
 
-pub const io = @import("./io/io.zig");
 
 const errno_map = errno_map: {
     var max_value = 0;
@@ -2699,7 +2636,6 @@ pub fn errnoToZigErr(err: anytype) anyerror {
     return error.Unexpected;
 }
 
-pub const brotli = @import("./brotli.zig");
 
 pub fn iterateDir(dir: FD) DirIterator.Iterator {
     return DirIterator.iterate(dir, .u8).iter;
@@ -3037,7 +2973,6 @@ pub fn unsafeAssert(condition: bool) callconv(callconv_inline) void {
         unreachable; // ASSERTION FAILURE
 }
 
-pub const dns = @import("./dns.zig");
 
 pub fn getRoughTickCount() timespec {
     if (comptime Environment.isMac) {
@@ -3254,7 +3189,6 @@ pub const timespec = extern struct {
     }
 };
 
-pub const UUID = @import("./bun.js/uuid.zig");
 
 /// An abstract number of element in a sequence. The sequence has a first element.
 /// This type should be used instead of integer because 2 contradicting traditions can
@@ -3324,10 +3258,7 @@ pub fn memmove(output: []u8, input: []const u8) void {
     }
 }
 
-pub const hmac = @import("./hmac.zig");
-pub const libdeflate = @import("./deps/libdeflate.zig");
 
-pub const bake = @import("./bake.zig");
 
 /// like std.enums.tagName, except it doesn't lose the sentinel value.
 pub fn tagName(comptime Enum: type, value: Enum) ?[:0]const u8 {
@@ -3563,7 +3494,6 @@ pub inline fn writeAnyToHasher(hasher: anytype, thing: anytype) void {
     hasher.update(std.mem.asBytes(&thing));
 }
 
-pub const perf = @import("./perf.zig");
 pub inline fn isComptimeKnown(x: anytype) bool {
     return comptime @typeInfo(@TypeOf(.{x})).@"struct".fields[0].is_comptime;
 }
@@ -3611,7 +3541,6 @@ pub noinline fn throwStackOverflow() StackOverflow!void {
 }
 pub const StackOverflow = error{StackOverflow};
 
-pub const S3 = @import("./s3/client.zig");
 
 /// Memory is typically not decommitted immediately when freed.
 /// Sensitive information that's kept in memory can be read in various ways until the OS
@@ -3622,9 +3551,6 @@ pub fn freeSensitive(allocator: std.mem.Allocator, slice: anytype) void {
     allocator.free(slice);
 }
 
-pub const macho = @import("./macho.zig");
-pub const pe = @import("./pe.zig");
-pub const valkey = @import("./valkey/index.zig");
 pub const highway = @import("./highway.zig");
 
 pub const mach_port = if (Environment.isMac) std.c.mach_port_t else u32;
@@ -3632,7 +3558,6 @@ pub const mach_port = if (Environment.isMac) std.c.mach_port_t else u32;
 /// Automatically generated C++ bindings for functions marked with `[[ZIG_EXPORT(...)]]`
 pub const cpp = @import("cpp");
 
-pub const asan = @import("./asan.zig");
 
 pub fn contains(item: anytype, list: *const std.ArrayListUnmanaged(@TypeOf(item))) bool {
     const T = @TypeOf(item);
@@ -3656,7 +3581,6 @@ pub fn getUseSystemCA(globalObject: *jsc.JSGlobalObject, callFrame: *jsc.CallFra
 // Claude thinks its bun.JSC when we renamed it to bun.jsc months ago.
 pub const JSC = @compileError("Deprecated: Use @import(\"bun\").jsc instead");
 
-pub const ConfigVersion = @import("./ConfigVersion.zig").ConfigVersion;
 
 const CopyFile = @import("./copy_file.zig");
 const builtin = @import("builtin");
