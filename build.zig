@@ -17,9 +17,10 @@ pub fn build(b: *std.Build) void {
         .imports = &.{.{ .name = "bun", .module = bun_module }},
     });
 
-    const bridge_lib = b.addStaticLibrary(.{
+    const bridge_lib = b.addLibrary(.{
         .name = "bridge",
         .root_module = bridge_module,
+        .linkage = .static,
     });
     b.installArtifact(bridge_lib);
 

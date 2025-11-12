@@ -11,7 +11,6 @@ This document tracks the ongoing conversation about turning the legacy Bun check
 
 ## Q2 · Which areas can be removed with zero impact on the bridge?
 
-- Package manager (`src/install/`), bundler (`src/bundler/`), CLI + shell, CSS/HTML parsers, HTTP/SQL clients, Bake, Node compatibility layers, and the JavaScript test runner were all removed.
 - The remaining `src/bun.js/bindings/` files still mention DOM, WebCrypto, inspectors, etc. We keep them only until we can prove the bridge never touches those entry points; then we delete them as well.
 - Build system scaffolding (CMake, scripts, `bunfig`, etc.) was erased in favor of the much smaller `bridge/build.zig`.
 

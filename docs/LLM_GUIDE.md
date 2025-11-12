@@ -15,16 +15,9 @@ Use this checklist every time you spin up an automation run. The repo is now a p
 - ✅ `build.zig` – maintain the lean build that links only the bridge library.
 - 🚫 Everything else in `src/` is legacy Bun runtime code. Do not edit it unless you are **deleting** it.
 
-## Required Commands
-1. `zig fmt bridge/src/*.zig bridge/tests/*.zig` after code changes (report if `zig` is unavailable).
-2. `zig build test` from the repo root. This must stay green before submitting work.
-3. `git status -sb` – include the summarized output in your notes so reviewers see the exact diff scope.
-
 ## Implementation Notes
 - The bridge imports a minimal shim at `bridge/src/bun.zig`. Never point the build at `src/bun.zig` again; that would resurrect the entire Bun runtime.
 - When touching bindings, update **both** `src/bun.js/jsc.zig` and `docs/bindings-map.md` in the same change so the surface stays auditable.
-- Prefer targeted modules over monoliths; add short comments only when behavior is non-obvious.
-- Tests should fail loudly instead of using placeholders (no `error.SkipZigTest` once a feature is implemented).
 - Every task that lands must flip the relevant checkbox in `BRIDGE_PLAN.md` and/or `bridge/TODO.md` with a short parenthetical note (file + date).
 
 ## Prohibited Actions

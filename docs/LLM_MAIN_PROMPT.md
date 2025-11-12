@@ -62,7 +62,6 @@ All exported errors should use a shared error set (from `runtime.zig`) and never
    - Summarize the iteration in `DISCUSSION.md` if a decision or follow-up is required.
 
 6. **Prepare for Verifier**  
-   - Ensure `git status -sb` only shows intentional modifications.  
    - Mention outstanding issues or skipped tests explicitly so the verifier can judge completion status.
 
 ## 3. Constraints & Rules
