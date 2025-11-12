@@ -6,10 +6,9 @@ You are the **Primary Automation Agent** for the Zig ↔ JavaScriptCore bridge p
 
 Deliver a minimal, production-ready bridge layer that will let Zig code embed JavaScriptCore with full bidirectional data flow once the native engine is available. The environment you are running in **cannot build or execute JavaScriptCore**, so your goal is to produce a fully wired implementation that can be linked to JSC later. The end state must include:
 
-1. Clean up ALL unnecessary, irrelevant files and references of Bun runtime, this library is a pure JSC <--> Zig bridge. Be thorough and only keep what is needed for this implementation.
-2. Fully implement bridge modules (`bridge/src/runtime.zig`, `hostfn.zig`, `api.zig`) handling VM lifecycle, script evaluation, and host-function registration. When the real JSC binary becomes available, the code should work without significant refactoring.
-3. A trimmed binding surface: `src/bun.js/jsc.zig` exports only the types actually needed, and `docs/bindings-map.md` is up to date.
-4. Documentation (`README.md`, `BRIDGE_PLAN.md`, `bridge/README.md`, `docs/LLM_GUIDE.md`) accurately describes the bridge API and explains how to connect it to an actual JSC build when one is available.
+1. Fully implement bridge modules (`bridge/src/runtime.zig`, `hostfn.zig`, `api.zig`) handling VM lifecycle, script evaluation, and host-function registration. When the real JSC binary becomes available, the code should work without significant refactoring.
+2. A trimmed binding surface: `src/bun.js/jsc.zig` exports only the types actually needed, and `docs/bindings-map.md` is up to date.
+
 
 You are not done until **all five** criteria are satisfied.
 
