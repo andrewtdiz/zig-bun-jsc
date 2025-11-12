@@ -8,7 +8,7 @@ This repository now focuses on a single goal: provide a compact, auditable layer
 | Path | Purpose |
 | ---- | ------- |
 | `src/bun.js/jsc.zig` | The trimmed Zig bindings that wrap JSC types (JSValue, JSObject, JSGlobalObject, VM, etc.). |
-| `src/bun.js/bindings/` | The matching C++/Zig glue that bridges to the JavaScriptCore headers. This directory is still large because it houses the low-level ABI surface. |
+| `src/bun.js/bindings/` | Minimal JSValue/CallFrame/JSGlobalObject/VM/ZigString shims. Everything else from Bun’s legacy bindings has been deleted. |
 | `bridge/` | A self-contained Zig test harness for iterating on the bridge without any of the old Bun tooling. |
 
 Anything unrelated to Zig↔JSC data flow (bundler, install tools, HTTP, CSS, Node polyfills, etc.) has been deleted. When you see references to “legacy Bun” in comments they exist only for historical context.
@@ -34,7 +34,7 @@ The root `build.zig` wires `bridge/tests/*.zig` against `bridge/src/lib.zig`, wh
 Next steps (see `BRIDGE_PLAN.md` for the detailed roadmap):
 
 1. Integrate a real JavaScriptCore build and implement an `EvalHandler` that calls into it (the bridge exposes `api.configureEval` for this hook).
-2. Continue trimming unneeded Bun bindings so only the bridge-critical surfaces remain.
+2. Validate the new minimal bindings once a real JavaScriptCore build is available (today they operate in stub mode).
 3. Expand the test matrix with additional data-marshalling scenarios once real JSC builds become available.
 
 ## Test Matrix

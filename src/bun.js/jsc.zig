@@ -11,9 +11,6 @@ pub const conv: std.builtin.CallingConvention = if (bun.Environment.isWindows an
 else
     .c;
 
-/// Web Template Framework
-pub const wtf = @import("./bindings/WTF.zig").WTF;
-
 /// Binding for JSCInitialize in ZigGlobalObject.cpp
 pub fn initialize(eval_mode: bool) void {
     markBinding(@src());
@@ -31,12 +28,7 @@ pub const JSHostFnZig = host_fn.JSHostFnZig;
 pub const JSHostFnZigWithContext = host_fn.JSHostFnZigWithContext;
 pub const JSHostFunctionTypeWithContext = host_fn.JSHostFunctionTypeWithContext;
 pub const toJSHostFn = host_fn.toJSHostFn;
-pub const toJSHostFnResult = host_fn.toJSHostFnResult;
 pub const toJSHostFnWithContext = host_fn.toJSHostFnWithContext;
-pub const toJSHostCall = host_fn.toJSHostCall;
-pub const fromJSHostCall = host_fn.fromJSHostCall;
-pub const fromJSHostCallGeneric = host_fn.fromJSHostCallGeneric;
-pub const createCallback = host_fn.createCallback;
 
 /// Handles consumed by `bridge/src/runtime.zig` and `bridge/src/hostfn.zig`.
 pub const CallFrame = @import("./bindings/CallFrame.zig").CallFrame;
@@ -67,8 +59,6 @@ pub fn OpaqueWrap(comptime Context: type, comptime Function: fn (this: *Context)
         }
     }.callback;
 }
-
-pub const Error = @import("ErrorCode").Error;
 
 /// According to https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date,
 /// maximum Date in JavaScript is less than Number.MAX_SAFE_INTEGER (u52).

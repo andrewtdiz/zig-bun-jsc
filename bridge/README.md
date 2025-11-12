@@ -74,7 +74,7 @@ Remember to call `api.shutdown()` (or `runtime.resetForTesting()`) when you are 
 
 1. Replace the placeholder evaluator shown above with a concrete call into WebKit’s `JSLockHolder`/`evaluate` helpers once prebuilt libraries are available.
 2. Introduce fixtures (small `.js` files) under `bridge/fixtures/` as soon as the evaluator can actually execute JavaScript.
-3. Continue trimming unused bindings under `src/bun.js/bindings/` so the bridge exports only the types it needs.
+3. Verify the new minimal `src/bun.js/bindings/` stubs once a real JSC build is linked (until then they provide deterministic test-only fallbacks).
 
 ## Bridge Modules
 

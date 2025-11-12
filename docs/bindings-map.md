@@ -12,4 +12,8 @@ The bridge now re-exports only the bindings that are exercised by `bridge/src/*`
 
 > If a binding disappears from this list, delete the corresponding Zig/C++ files and remove the re-export from `src/bun.js/jsc.zig`.
 
+2025-11-13: Removed the lingering `WTF.zig` re-export from `src/bun.js/jsc.zig`; legacy Bun sources import it directly now, so the bridge only exposes `JSValue`, `CallFrame`, `JSGlobalObject`, `VM`, and `ZigString`.
+
 2025-11-13: Removed the legacy `Strong`, `Weak`, `WeakRefType`, `RefString`, and `javascript_core_c_api` exports from `src/bun.js/jsc.zig`. They are no longer part of the bridge module surface and can be deleted once the remaining Bun-era sources that reference them are removed.
+
+2025-11-14: Deleted the rest of `src/bun.js/bindings/` and reimplemented the five retained bindings with lightweight stubs. The new files only depend on the bridge’s mini `bun` module and provide deterministic fallbacks while tests run without a native JavaScriptCore build. When the real engine becomes available we can replace the `builtin.is_test` branches with calls into the upstream C++ helpers.

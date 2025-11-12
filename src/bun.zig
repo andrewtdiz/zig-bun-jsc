@@ -716,7 +716,13 @@ pub const invalid_fd: FileDescriptor = .invalid;
 pub const bun_js = @import("./bun.js.zig");
 /// Bindings to JavaScriptCore and other JavaScript primatives.
 /// Web and runtime-specific APIs should go in `webcore` and `api`.
-pub const jsc = bun_js.jsc;
+/// Legacy callers still reach `bun.jsc.wtf`, so expose that helper here
+/// without polluting the trimmed `src/bun.js/jsc.zig` surface consumed
+/// by the bridge modules.
+pub const jsc = struct {
+    pub usingnamespace bun_js.jsc;
+    pub const wtf = @import("./bun.js/bindings/WTF.zig").WTF;
+};
 /// JavaScript Web APIs
 pub const webcore = bun_js.webcore;
 /// "api" in this context means "the Bun APIs", as in "the exposed JS APIs"

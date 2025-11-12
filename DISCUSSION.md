@@ -31,3 +31,8 @@ This document tracks the ongoing conversation about turning the legacy Bun check
 
 - Removed `src/main.zig`, `src/main_test.zig`, and `src/main_wasm.zig` per verifier feedback so the repository no longer advertises the legacy Bun CLI/test/wasm binaries. The bridge now builds solely via `bridge/src/lib.zig`.
 - Tooling gap: the sandbox image currently lacks the `zig` executable, so we cannot run `zig fmt` or `zig build test` locally; rerun those commands once Zig is provisioned.
+
+## 2025-11-14 · Binding surface rewrite
+
+- Deleted the legacy `src/bun.js/bindings/` tree and reimplemented the five bridge-owned bindings (JSValue, CallFrame, JSGlobalObject, VM, ZigString) with lightweight stubs so they only depend on the mini `bun` module. The new code short-circuits when `builtin.is_test` so we can keep running Zig-only tests without linking JavaScriptCore.
+- These stubs intentionally limit functionality (e.g. `ZigString.fromBytes` only handles UTF-8 and `JSValue.jsNumberFromInt32` fabricates deterministic handles). Once we have a real JSC build we must replace the `builtin.is_test` branches with calls into the true C++ helpers to regain ABI compatibility.
