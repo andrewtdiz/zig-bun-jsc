@@ -41,16 +41,7 @@ pub const createCallback = host_fn.createCallback;
 /// Handles consumed by `bridge/src/runtime.zig` and `bridge/src/hostfn.zig`.
 pub const CallFrame = @import("./bindings/CallFrame.zig").CallFrame;
 pub const JSGlobalObject = @import("./bindings/JSGlobalObject.zig").JSGlobalObject;
-pub const JSValue = @import("./bindings/JSValue.zig").JSValue;
-
 pub const VM = @import("./bindings/VM.zig").VM;
-pub const Strong = @import("./Strong.zig");
-pub const Weak = @import("./Weak.zig").Weak;
-pub const WeakRefType = @import("./Weak.zig").WeakRefType;
-pub const RefString = @import("./jsc/RefString.zig");
-
-/// Deprecated: Avoid using this in new code.
-pub const C = @import("./javascript_core_c_api.zig");
 /// String helper used by `bridge/src/hostfn.zig` when naming functions.
 pub const ZigString = @import("./bindings/ZigString.zig").ZigString;
 

@@ -3,7 +3,7 @@
 Use this file as the short-term backlog for implementation work. Keep each entry scoped so an automation loop can pick it up without additional context.
 
 ## Ready
-_(none — 2025-11-12)_
+_(none — 2025-11-13)_
 
 ## Up Next
 _(none — 2025-11-12)_
@@ -19,3 +19,4 @@ _(none — 2025-11-12)_
 - [x] Replace placeholder skips in `bridge/tests/vm_lifecycle.zig` (and related suites) with real assertions. (2024-05-26 — added lifecycle/hostfn/gc/embed loop coverage)
 - [x] Simplify root `build.zig` so `zig build` installs the bridge lib and `zig build test` runs the suite. (2024-05-26 — new ~60 line build script.)
 - [x] Flesh out `bridge/src/api.zig` `evalUtf8` to compile/evaluate scripts via a delegate and return the resulting `JSValue`. (2024-05-26 — added eval handler plumbing + tests.)
+- [x] Refresh `bridge/README.md` so it reflects the current module/test layout and documents how to install a real `EvalHandler`. (2025-11-13 — added module tree, EvalHandler wiring guide, and updated next steps.)

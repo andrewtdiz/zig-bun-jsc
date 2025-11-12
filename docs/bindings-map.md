@@ -11,3 +11,5 @@ The bridge now re-exports only the bindings that are exercised by `bridge/src/*`
 | `src/bun.js/bindings/ZigString.zig` | `src/bun.js/jsc.zig`, `bridge/src/hostfn.zig` | Converts Zig strings so host functions can be named on the global object. |
 
 > If a binding disappears from this list, delete the corresponding Zig/C++ files and remove the re-export from `src/bun.js/jsc.zig`.
+
+2025-11-13: Removed the legacy `Strong`, `Weak`, `WeakRefType`, `RefString`, and `javascript_core_c_api` exports from `src/bun.js/jsc.zig`. They are no longer part of the bridge module surface and can be deleted once the remaining Bun-era sources that reference them are removed.
