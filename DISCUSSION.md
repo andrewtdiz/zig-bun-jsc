@@ -26,3 +26,8 @@ This document tracks the ongoing conversation about turning the legacy Bun check
 - It started as a fork, but the runtime/product functionality has been deliberately removed. The only reason `src/bun.js/*` paths remain is because the low-level bindings still include those files.
 - When we mention "legacy Bun" in other documents it strictly refers to the code we are trimming; this repo is **not** a drop-in replacement for Bun.
 - We will continue renaming/moving files once the Zig ↔ JSC API is stable enough that downstream embedders can depend on it without pulling in unrelated modules.
+
+## 2025-11-12 · CLI entrypoint cleanup
+
+- Removed `src/main.zig`, `src/main_test.zig`, and `src/main_wasm.zig` per verifier feedback so the repository no longer advertises the legacy Bun CLI/test/wasm binaries. The bridge now builds solely via `bridge/src/lib.zig`.
+- Tooling gap: the sandbox image currently lacks the `zig` executable, so we cannot run `zig fmt` or `zig build test` locally; rerun those commands once Zig is provisioned.

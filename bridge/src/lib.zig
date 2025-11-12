@@ -3,8 +3,8 @@ const bun = @import("bun");
 /// Expose the trimmed JSC bindings so downstream code has a single import path.
 pub const JSC = bun.jsc;
 pub const JSValue = JSC.JSValue;
-pub const JSObject = JSC.JSObject;
-pub const JSString = JSC.JSString;
+pub const JSGlobalObject = JSC.JSGlobalObject;
+pub const CallFrame = JSC.CallFrame;
 
 /// Bridge modules
 pub const runtime = @import("runtime.zig");

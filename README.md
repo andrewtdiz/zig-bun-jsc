@@ -25,29 +25,29 @@ Requirements:
 Smoke test the Zig-only scaffolding:
 
 ```bash
-cd bridge
-zig build smoke
+zig build            # builds the bridge static library
+zig build test       # runs every file under bridge/tests/
 ```
 
-The `bridge` build script wires `bridge/tests/*.zig` against `bridge/src/lib.zig`, which re-exports the slimmed `src/bun.js/jsc.zig`. These tests currently stop before touching real JavaScriptCore symbols so you can iterate on the Zig surface without dealing with the native library yet.
+The root `build.zig` wires `bridge/tests/*.zig` against `bridge/src/lib.zig`, which re-exports the slimmed `src/bun.js/jsc.zig`. These tests currently stop before touching real JavaScriptCore symbols so you can iterate on the Zig surface without dealing with the native library yet.
 
 Next steps (see `BRIDGE_PLAN.md` for the detailed roadmap):
 
-1. Flesh out `bridge/src/lib.zig` so it can create/destroy a VM, install host functions, and evaluate scripts.
-2. Move cross-platform initialization into a new module (e.g. `src/bridge/runtime.zig`) that links to the C++ bindings.
-3. Add incremental tests under `bridge/tests/` to cover VM lifecycle, host→JS calls, JS→host callbacks, GC + weak refs, and data marshaling.
+1. Integrate a real JavaScriptCore build and implement an `EvalHandler` that calls into it (the bridge exposes `api.configureEval` for this hook).
+2. Continue trimming unneeded Bun bindings so only the bridge-critical surfaces remain.
+3. Expand the test matrix with additional data-marshalling scenarios once real JSC builds become available.
 
 ## Test Matrix
 
 | File | Scenario | Status |
 | ---- | -------- | ------ |
-| `bridge/tests/smoke.zig` | Basic initialization helper + imports the rest of the suite | PASS |
-| `bridge/tests/vm_lifecycle.zig` | Init/shutdown/global-object checks | `SkipZigTest` placeholder |
-| `bridge/tests/hostfn_roundtrip.zig` | Expose a Zig host fn and call it from JS | `SkipZigTest` placeholder |
-| `bridge/tests/gc_weakrefs.zig` | Ensure weak references survive GC | `SkipZigTest` placeholder |
-| `bridge/tests/embed_loop.zig` | Simulate a game-engine tick invoking the bridge | `SkipZigTest` placeholder |
+| `bridge/tests/smoke.zig` | Sanity check + pulls in the rest of the suite | PASS |
+| `bridge/tests/vm_lifecycle.zig` | Init/adopt/shutdown + eval lifecycle gates | PASS |
+| `bridge/tests/hostfn_roundtrip.zig` | Register a Zig host fn and dispatch via metadata | PASS |
+| `bridge/tests/gc_weakrefs.zig` | Reset paths free handles + hostfn registry | PASS |
+| `bridge/tests/embed_loop.zig` | Simulated game loop exercising eval + host callbacks | PASS |
 
-Update this table as soon as each placeholder becomes real coverage.
+All rows execute under `zig build test`; add new scenarios here as coverage expands.
 
 ## Relationship to Bun
 
