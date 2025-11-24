@@ -28,7 +28,7 @@ pub const Handles = struct {
 };
 
 pub const EvalOptions = struct {
-    filename: []const u8 = "<eval>";
+    filename: []const u8 = "<eval>",
 };
 
 pub const EvalHandler = *const fn (context: ?*anyopaque, global: *JSC.JSGlobalObject, script: []const u8, options: EvalOptions) Error!JSC.JSValue;
@@ -55,29 +55,28 @@ var eval_backend: EvalBackend = .{};
 /// Initialize JavaScriptCore once per process. During `zig test` runs we short
 /// circuit so we can exercise the Zig-only scaffolding without linking JSC yet.
 pub fn init(config: Config) Error!void {
-    const already_initialized = initialized.swap(true, .SeqCst);
+    const already_initialized = initialized.swap(true, .seq_cst);
     if (already_initialized) return;
 
     state.config = config;
 
     if (builtin.is_test) {
         // Tests can toggle initialization without loading the native library.
-        _ = config;
-        if (config.handles) |handles| {
-            try adoptHandles(handles);
+        if (config.handles) |provided_handles| {
+            try adoptHandles(provided_handles);
         }
         return;
     }
 
     JSC.initialize(config.eval_mode);
 
-    if (config.handles) |handles| {
-        try adoptHandles(handles);
+    if (config.handles) |provided_handles| {
+        try adoptHandles(provided_handles);
     }
 }
 
 pub fn shutdown() Error!void {
-    const was_initialized = initialized.swap(false, .SeqCst);
+    const was_initialized = initialized.swap(false, .seq_cst);
     if (!was_initialized) return Error.NotInitialized;
 
     releaseVmHandlesIfPresent();
@@ -85,12 +84,12 @@ pub fn shutdown() Error!void {
 }
 
 pub fn isInitialized() bool {
-    return initialized.load(.SeqCst);
+    return initialized.load(.seq_cst);
 }
 
 pub fn resetForTesting() void {
     releaseVmHandlesIfPresent();
-    initialized.store(false, .SeqCst);
+    initialized.store(false, .seq_cst);
     resetState();
 }
 
@@ -99,11 +98,11 @@ pub fn globalObject() Error!*JSC.JSGlobalObject {
     return state.global orelse Error.MissingGlobalObject;
 }
 
-pub fn adoptHandles(handles: Handles) Error!void {
+pub fn adoptHandles(new_handles: Handles) Error!void {
     if (!isInitialized()) return Error.NotInitialized;
-    state.vm = handles.vm;
-    state.global = handles.global;
-    state.owns_vm = handles.owns_vm;
+    state.vm = new_handles.vm;
+    state.global = new_handles.global;
+    state.owns_vm = new_handles.owns_vm;
 }
 
 pub fn handles() ?Handles {

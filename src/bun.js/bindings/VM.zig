@@ -4,8 +4,6 @@ const JSGlobalObject = @import("./JSGlobalObject.zig").JSGlobalObject;
 pub const VM = opaque {
     pub fn deinit(vm: *VM, global: *JSGlobalObject) void {
         if (builtin.is_test) {
-            _ = vm;
-            _ = global;
             return;
         }
         JSC__VM__deinit(vm, global);

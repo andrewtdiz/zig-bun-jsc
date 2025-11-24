@@ -39,36 +39,27 @@ pub fn toJSHostFnWithContext(comptime Context: type, comptime fn_ptr: JSHostFnZi
 
 /// Create a host function backed by Zig. Tests short-circuit to `.zero` because
 /// the VM scaffolding is not linked on this machine.
-pub fn NewRuntimeFunction(
-    global: *JSGlobalObject,
-    name: *const ZigString,
-    length: u32,
-    callback: JSHostFn,
-    is_constructor: bool,
-    is_strict: bool,
-    context: ?*anyopaque,
-) JSValue {
-    if (builtin.is_test) {
-        _ = global;
-        _ = name;
-        _ = length;
-        _ = callback;
-        _ = is_constructor;
-        _ = is_strict;
-        _ = context;
-        return .zero;
+    pub fn NewRuntimeFunction(
+        global: *JSGlobalObject,
+        name: *const ZigString,
+        length: u32,
+        callback: JSHostFn,
+        is_constructor: bool,
+        is_strict: bool,
+        context: ?*anyopaque,
+    ) JSValue {
+        if (builtin.is_test) {
+            return .zero;
+        }
+        return Bun__HostFunction__create(global, name, length, callback, is_constructor, is_strict, context);
     }
-    return Bun__HostFunction__create(global, name, length, callback, is_constructor, is_strict, context);
-}
 
-pub fn setFunctionData(function_value: JSValue, data: ?*anyopaque) void {
-    if (builtin.is_test) {
-        _ = function_value;
-        _ = data;
-        return;
+    pub fn setFunctionData(function_value: JSValue, data: ?*anyopaque) void {
+        if (builtin.is_test) {
+            return;
+        }
+        Bun__HostFunction__setData(function_value, data);
     }
-    Bun__HostFunction__setData(function_value, data);
-}
 
 pub fn getFunctionData(function_value: JSValue) ?*anyopaque {
     if (builtin.is_test) return null;
