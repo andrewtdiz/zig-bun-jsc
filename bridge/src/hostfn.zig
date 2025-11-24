@@ -39,7 +39,7 @@ pub fn expose(reg: Registration) runtime.Error!void {
 
     const global = try runtime.globalObject();
 
-    var stored = try allocateStoredRegistration(reg);
+    const stored = try allocateStoredRegistration(reg);
     var needs_destroy = true;
     errdefer if (needs_destroy) destroyStoredRegistration(stored);
 
@@ -69,7 +69,7 @@ pub fn reset() void {
 
 fn allocateStoredRegistration(reg: Registration) runtime.Error!*StoredRegistration {
     const alloc = allocator();
-    var stored = alloc.create(StoredRegistration) catch return runtime.Error.EngineUnavailable;
+    const stored = alloc.create(StoredRegistration) catch return runtime.Error.EngineUnavailable;
     stored.* = .{
         .name = alloc.dupe(u8, reg.name) catch {
             alloc.destroy(stored);
@@ -86,7 +86,6 @@ fn allocateStoredRegistration(reg: Registration) runtime.Error!*StoredRegistrati
 fn installOnGlobal(global: *JSC.JSGlobalObject, stored: *StoredRegistration) runtime.Error!void {
     if (builtin.is_test) {
         stored.js_function = .zero;
-        _ = global;
         return;
     }
     const function_value = try makeHostFunction(global, stored);

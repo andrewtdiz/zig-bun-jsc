@@ -6,9 +6,9 @@ pub const ZigString = extern struct {
     ptr: [*]const u8,
     len: usize,
 
-    pub fn fromBytes(slice: []const u8) ZigString {
-        if (slice.len == 0) return .{ .ptr = empty_ptr(), .len = 0 };
-        return .{ .ptr = slice.ptr, .len = slice.len };
+    pub fn fromBytes(bytes: []const u8) ZigString {
+        if (bytes.len == 0) return .{ .ptr = empty_ptr(), .len = 0 };
+        return .{ .ptr = bytes.ptr, .len = bytes.len };
     }
 
     pub fn slice(this: *const ZigString) []const u8 {

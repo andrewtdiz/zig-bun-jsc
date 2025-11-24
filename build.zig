@@ -4,18 +4,28 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const bun_module = b.createModule(.{
-        .root_source_file = .{ .src_path = .{ .owner = b, .sub_path = "bridge/src/bun.zig" } },
+    const jsc_module = b.addModule("jsc", .{
+        .root_source_file = b.path("src/bun.js/jsc.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
 
-    const bridge_module = b.createModule(.{
-        .root_source_file = .{ .src_path = .{ .owner = b, .sub_path = "bridge/src/lib.zig" } },
+    const bun_module = b.addModule("bun", .{
+        .root_source_file = b.path("bridge/src/bun.zig"),
         .target = target,
         .optimize = optimize,
-        .imports = &.{.{ .name = "bun", .module = bun_module }},
+        .link_libc = true,
     });
+    bun_module.addImport("jsc", jsc_module);
+
+    const bridge_module = b.addModule("bridge", .{
+        .root_source_file = b.path("bridge/src/lib.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    bridge_module.addImport("bun", bun_module);
 
     const bridge_lib = b.addLibrary(.{
         .name = "bridge",
@@ -24,14 +34,17 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(bridge_lib);
 
+    const bridge_tests_module = b.createModule(.{
+        .root_source_file = b.path("bridge/tests/smoke.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    bridge_tests_module.addImport("bridge", bridge_module);
+
     const bridge_tests = b.addTest(.{
         .name = "bridge-tests",
-        .root_module = b.createModule(.{
-            .root_source_file = .{ .src_path = .{ .owner = b, .sub_path = "bridge/tests/smoke.zig" } },
-            .target = target,
-            .optimize = optimize,
-            .imports = &.{.{ .name = "bridge", .module = bridge_module }},
-        }),
+        .root_module = bridge_tests_module,
     });
 
     const run_tests = b.addRunArtifact(bridge_tests);

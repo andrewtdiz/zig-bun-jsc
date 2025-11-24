@@ -35,4 +35,4 @@ pub const Global = struct {
 pub const default_allocator: std.mem.Allocator = std.heap.c_allocator;
 
 /// Re-export the JavaScriptCore Zig bindings.
-pub const jsc = @import("../../src/bun.js/jsc.zig");
+pub const jsc = @import("jsc");
